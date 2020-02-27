@@ -1,8 +1,10 @@
 from bs4 import BeautifulSoup
 import requests
+import json
 
 
 class WebScraper:
+
     def __init__(self, url='', saveFilePath=''):
         self.url = url
         self.saveFilePath = saveFilePath
@@ -20,15 +22,19 @@ class WebScraper:
         return self.path
 
     def run(self, timeout=0):
-        file = open(self.saveFilePath,'a+')
+        data = {}
+        file = open(self.saveFilePath,'w+')
 
         res = requests.get(self.url,timeout=timeout)
         content = BeautifulSoup(res.content,"html.parser")
 
-        title = content.find('span',attrs={"class":"caption-subject"}).text.strip()
-        file.write(f'{title}\n')
+        title = content.find('span',attrs={"class": "caption-subject"}).text.strip()
 
-        c = content.find_all('div',attrs={"class":"col-md-6"})
+        data.update({"title": title})
+        data.update({"data": {}})
+
+        c = content.find_all('div',attrs={"class": "col-md-6"})
+
 
         for cols in c:
 
@@ -37,8 +43,10 @@ class WebScraper:
                 if len(elem.contents)>1:
                     label = elem.find('label').text
                     val = elem.find('div').text.strip()
+                    data["data"].update({label: val})
 
-                    file.write(f'{label}|{val}\n')
-            file.write('\n')
+
+
+        json.dump(data, file)
 
         file.close()
